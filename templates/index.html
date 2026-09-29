@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Document Similarity Checker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #F4F6F5;
+            --surface: #FFFFFF;
+            --ink: #1F2A24;
+            --ink-soft: #4B5A52;
+            --pine: #2F6F4E;
+            --pine-dark: #1F4D35;
+            --pine-tint: #EAF2EC;
+            --rust: #B65C38;
+            --border: #D9DED9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--paper);
+            color: var(--ink);
+            font-family: "IBM Plex Sans", sans-serif;
+            line-height: 1.5;
+        }
+
+        .page {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        /* --- Hero section --- */
+
+        .hero {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 48px;
+            animation: heroRise 0.6s ease-out;
+        }
+
+        @keyframes heroRise {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-icon {
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-family: "Source Serif 4", serif;
+            font-size: 34px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+
+        .tagline {
+            color: var(--ink-soft);
+            font-size: 16px;
+            margin: 0;
+            max-width: 46ch;
+        }
+
+        /* --- Error banner --- */
+
+        .error {
+            background-color: #FBEFE9;
+            border: 1px solid var(--rust);
+            color: #8A3F24;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        /* --- Upload form --- */
+
+        .doc-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .extra-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .doc-slot {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 1px 2px rgba(31, 42, 36, 0.05);
+        }
+
+        .doc-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .doc-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+
+        .remove-slot {
+            background: none;
+            border: none;
+            color: var(--ink-soft);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .remove-slot:hover {
+            color: var(--rust);
+        }
+
+        /* --- Drag and drop zone --- */
+
+        .drop-zone {
+            border: 1.5px dashed var(--border);
+            border-radius: 6px;
+            padding: 22px 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--pine);
+            background-color: var(--pine-tint);
+        }
+
+        .drop-zone.has-file {
+            border-style: solid;
+            border-color: var(--pine);
+            background-color: var(--pine-tint);
+        }
+
+        .drop-icon {
+            font-size: 20px;
+            color: var(--ink-soft);
+            margin-bottom: 6px;
+        }
+
+        .drop-main {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .drop-sub {
+            display: block;
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: 2px;
+        }
+
+        .chosen-file {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .file-icon {
+            font-size: 18px;
+        }
+
+        .chosen-file .file-name {
+            font-size: 13px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 160px;
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: var(--ink-soft);
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 2px;
+        }
+
+        .remove-file:hover {
+            color: var(--rust);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .add-document {
+            display: inline-block;
+            margin-top: 18px;
+            background: none;
+            border: none;
+            color: var(--pine-dark);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .add-document:hover {
+            color: var(--pine);
+        }
+
+        .submit-row {
+            margin-top: 36px;
+        }
+
+        button.compare-button {
+            background-color: var(--pine);
+            color: white;
+            border: none;
+            padding: 13px 26px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: "IBM Plex Sans", sans-serif;
+            transition: background-color 0.15s ease;
+        }
+
+        button.compare-button:hover {
+            background-color: var(--pine-dark);
+        }
+
+        button.compare-button:disabled {
+            background-color: var(--ink-soft);
+            cursor: default;
+        }
+
+        .file-types {
+            color: var(--ink-soft);
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        /* Visible focus outline for keyboard users */
+        .drop-zone:focus-visible,
+        .add-document:focus-visible,
+        button.compare-button:focus-visible {
+            outline: 2px solid var(--pine);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 560px) {
+            .doc-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <div class="hero">
+        <svg class="hero-icon" width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="8" width="36" height="48" rx="3" fill="#FFFFFF" stroke="#1F2A24" stroke-width="2"/>
+            <line x1="17" y1="20" x2="39" y2="20" stroke="#D9DED9" stroke-width="2"/>
+            <line x1="17" y1="27" x2="39" y2="27" stroke="#D9DED9" stroke-width="2"/>
+            <line x1="17" y1="34" x2="33" y2="34" stroke="#D9DED9" stroke-width="2"/>
+            <rect x="26" y="16" width="36" height="48" rx="3" fill="#FFFFFF" stroke="#2F6F4E" stroke-width="2"/>
+            <line x1="33" y1="28" x2="55" y2="28" stroke="#2F6F4E" stroke-width="2" opacity="0.55"/>
+            <line x1="33" y1="35" x2="55" y2="35" stroke="#2F6F4E" stroke-width="2" opacity="0.55"/>
+            <line x1="33" y1="42" x2="49" y2="42" stroke="#2F6F4E" stroke-width="2" opacity="0.55"/>
+        </svg>
+        <div>
+            <h1>Document Similarity Checker</h1>
+            <p class="tagline">Upload two or more documents and see how closely their wording overlaps, based on TF-IDF and cosine similarity.</p>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/compare" method="post" enctype="multipart/form-data" id="compare-form">
+
+        <div class="doc-row">
+            <div class="doc-slot">
+                <div class="doc-label-row">
+                    <span class="doc-label">Document 1</span>
+                </div>
+                <div class="drop-zone"
+                     id="drop-zone-1"
+                     tabindex="0"
+                     onclick="triggerFileDialog(1, event)"
+                     ondragover="handleDragOver(1, event)"
+                     ondragleave="handleDragLeave(1)"
+                     ondrop="handleDrop(1, event)">
+                    <div class="drop-text" id="drop-text-1">
+                        <div class="drop-icon">&#8593;</div>
+                        <span class="drop-main">Drag & drop a file here</span>
+                        <span class="drop-sub">or click to browse (.txt, .pdf)</span>
+                    </div>
+                    <div class="chosen-file" id="chosen-file-1">
+                        <span class="file-icon" id="file-icon-1"></span>
+                        <span class="file-name" id="file-name-1"></span>
+                        <button type="button" class="remove-file" onclick="removeFile(1, event)">&times;</button>
+                    </div>
+                </div>
+                <input type="file" name="documents" id="doc-input-1" accept=".txt,.pdf" required onchange="handleFileChange(1)">
+            </div>
+
+            <div class="doc-slot">
+                <div class="doc-label-row">
+                    <span class="doc-label">Document 2</span>
+                </div>
+                <div class="drop-zone"
+                     id="drop-zone-2"
+                     tabindex="0"
+                     onclick="triggerFileDialog(2, event)"
+                     ondragover="handleDragOver(2, event)"
+                     ondragleave="handleDragLeave(2)"
+                     ondrop="handleDrop(2, event)">
+                    <div class="drop-text" id="drop-text-2">
+                        <div class="drop-icon">&#8593;</div>
+                        <span class="drop-main">Drag & drop a file here</span>
+                        <span class="drop-sub">or click to browse (.txt, .pdf)</span>
+                    </div>
+                    <div class="chosen-file" id="chosen-file-2">
+                        <span class="file-icon" id="file-icon-2"></span>
+                        <span class="file-name" id="file-name-2"></span>
+                        <button type="button" class="remove-file" onclick="removeFile(2, event)">&times;</button>
+                    </div>
+                </div>
+                <input type="file" name="documents" id="doc-input-2" accept=".txt,.pdf" required onchange="handleFileChange(2)">
+            </div>
+        </div>
+
+        <div class="extra-slots" id="extra-slots"></div>
+
+        <button type="button" class="add-document" onclick="addDocumentSlot()">+ Add another document</button>
+        <p class="file-types">Accepts .txt and .pdf files.</p>
+
+        <div class="submit-row">
+            <button type="submit" class="compare-button" id="submit-button">Compare documents</button>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+    // Keeps track of how many document slots exist so far, so each new
+    // one gets a unique id and label number.
+    var slotCount = 2;
+
+    // Clicking anywhere on a drop zone opens the file picker, unless the
+    // click was actually on the "remove file" button inside it.
+    function triggerFileDialog(n, event) {
+        if (event.target.closest(".remove-file")) {
+            return;
+        }
+        document.getElementById("doc-input-" + n).click();
+    }
+
+    function handleFileChange(n) {
+        var input = document.getElementById("doc-input-" + n);
+        if (input.files.length > 0) {
+            showChosenFile(n, input.files[0].name);
+        } else {
+            hideChosenFile(n);
+        }
+    }
+
+    function showChosenFile(n, fileName) {
+        document.getElementById("drop-zone-" + n).classList.add("has-file");
+        document.getElementById("drop-text-" + n).style.display = "none";
+
+        var chosenFile = document.getElementById("chosen-file-" + n);
+        chosenFile.style.display = "flex";
+        document.getElementById("file-name-" + n).textContent = fileName;
+
+        // Show a different icon depending on the file type, just as a
+        // quick visual hint of what was picked.
+        var icon = fileName.toLowerCase().endsWith(".pdf") ? "\uD83D\uDCD5" : "\uD83D\uDCC4";
+        document.getElementById("file-icon-" + n).textContent = icon;
+    }
+
+    function hideChosenFile(n) {
+        document.getElementById("drop-zone-" + n).classList.remove("has-file");
+        document.getElementById("chosen-file-" + n).style.display = "none";
+        document.getElementById("drop-text-" + n).style.display = "block";
+    }
+
+    function removeFile(n, event) {
+        event.stopPropagation();
+        var input = document.getElementById("doc-input-" + n);
+        input.value = "";
+        hideChosenFile(n);
+    }
+
+    function handleDragOver(n, event) {
+        event.preventDefault();
+        document.getElementById("drop-zone-" + n).classList.add("drag-over");
+    }
+
+    function handleDragLeave(n) {
+        document.getElementById("drop-zone-" + n).classList.remove("drag-over");
+    }
+
+    function handleDrop(n, event) {
+        event.preventDefault();
+        document.getElementById("drop-zone-" + n).classList.remove("drag-over");
+
+        var droppedFiles = event.dataTransfer.files;
+        if (droppedFiles.length > 0) {
+            var input = document.getElementById("doc-input-" + n);
+            input.files = droppedFiles;
+            handleFileChange(n);
+        }
+    }
+
+    function addDocumentSlot() {
+        slotCount = slotCount + 1;
+        var n = slotCount;
+
+        var newSlot = document.createElement("div");
+        newSlot.className = "doc-slot";
+        newSlot.id = "slot-wrapper-" + n;
+        newSlot.innerHTML =
+            '<div class="doc-label-row">' +
+                '<span class="doc-label">Document ' + n + '</span>' +
+                '<button type="button" class="remove-slot" onclick="removeSlot(' + n + ')">Remove</button>' +
+            '</div>' +
+            '<div class="drop-zone" id="drop-zone-' + n + '" tabindex="0" ' +
+                'onclick="triggerFileDialog(' + n + ', event)" ' +
+                'ondragover="handleDragOver(' + n + ', event)" ' +
+                'ondragleave="handleDragLeave(' + n + ')" ' +
+                'ondrop="handleDrop(' + n + ', event)">' +
+                '<div class="drop-text" id="drop-text-' + n + '">' +
+                    '<div class="drop-icon">&#8593;</div>' +
+                    '<span class="drop-main">Drag & drop a file here</span>' +
+                    '<span class="drop-sub">or click to browse (.txt, .pdf)</span>' +
+                '</div>' +
+                '<div class="chosen-file" id="chosen-file-' + n + '">' +
+                    '<span class="file-icon" id="file-icon-' + n + '"></span>' +
+                    '<span class="file-name" id="file-name-' + n + '"></span>' +
+                    '<button type="button" class="remove-file" onclick="removeFile(' + n + ', event)">&times;</button>' +
+                '</div>' +
+            '</div>' +
+            '<input type="file" name="documents" id="doc-input-' + n + '" accept=".txt,.pdf" onchange="handleFileChange(' + n + ')">';
+
+        document.getElementById("extra-slots").appendChild(newSlot);
+    }
+
+    function removeSlot(n) {
+        var slot = document.getElementById("slot-wrapper-" + n);
+        if (slot) {
+            slot.remove();
+        }
+    }
+
+    // Give the user some feedback that something is happening once they
+    // submit the form, since PDF files can take a moment to process.
+    document.getElementById("compare-form").addEventListener("submit", function () {
+        var button = document.getElementById("submit-button");
+        button.disabled = true;
+        button.textContent = "Comparing documents...";
+    });
+</script>
+
+</body>
+</html>

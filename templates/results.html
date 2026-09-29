@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Similarity Results</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #F4F6F5;
+            --surface: #FFFFFF;
+            --ink: #1F2A24;
+            --ink-soft: #4B5A52;
+            --pine: #2F6F4E;
+            --pine-dark: #1F4D35;
+            --pine-tint: #EAF2EC;
+            --rust: #B65C38;
+            --rust-tint: #FBEFE9;
+            --border: #D9DED9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--paper);
+            color: var(--ink);
+            font-family: "IBM Plex Sans", sans-serif;
+            line-height: 1.5;
+        }
+
+        .page {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+            animation: pageRise 0.5s ease-out;
+        }
+
+        @keyframes pageRise {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: "Source Serif 4", serif;
+            font-size: 30px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+
+        .subtitle {
+            color: var(--ink-soft);
+            font-size: 15px;
+            margin: 0 0 36px 0;
+        }
+
+        .result-row {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 2px rgba(31, 42, 36, 0.05);
+        }
+
+        .result-names {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .result-names .vs {
+            color: var(--ink-soft);
+            font-style: italic;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 9px;
+            border-radius: 999px;
+        }
+
+        .badge-high {
+            background-color: var(--pine-tint);
+            color: var(--pine-dark);
+        }
+
+        .badge-low {
+            background-color: var(--rust-tint);
+            color: #8A3F24;
+        }
+
+        .bar-and-score {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .bar-track {
+            flex-grow: 1;
+            background-color: var(--paper);
+            border-radius: 5px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transform-origin: left;
+            animation: growBar 0.7s ease-out;
+        }
+
+        @keyframes growBar {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        .bar-fill.high {
+            background-color: var(--pine);
+        }
+
+        .bar-fill.low {
+            background-color: var(--rust);
+        }
+
+        .result-score {
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 15px;
+            font-weight: 500;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: var(--pine-dark);
+            font-size: 14px;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .back-link:hover {
+            color: var(--pine);
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <h1>Similarity results</h1>
+    <p class="subtitle">
+        Compared {{ doc_count }} document{{ "s" if doc_count != 1 else "" }}
+        across {{ results|length }} pair{{ "s" if results|length != 1 else "" }},
+        based on TF-IDF vectors and cosine similarity.
+    </p>
+
+    {% for result in results %}
+        <div class="result-row">
+            <div class="result-names">
+                <span>{{ result.doc_a }}</span>
+                <span class="vs">vs</span>
+                <span>{{ result.doc_b }}</span>
+                {% if result.badge == "Highest match" %}
+                    <span class="badge badge-high">Highest match</span>
+                {% elif result.badge == "Most different" %}
+                    <span class="badge badge-low">Most different</span>
+                {% endif %}
+            </div>
+            <div class="bar-and-score">
+                <div class="bar-track">
+                    {% if result.percentage >= 15 %}
+                        <div class="bar-fill high" style="width: {{ result.percentage }}%;"></div>
+                    {% else %}
+                        <div class="bar-fill low" style="width: {{ result.percentage }}%;"></div>
+                    {% endif %}
+                </div>
+                <div class="result-score">{{ result.percentage }}%</div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <a class="back-link" href="/">&larr; Compare more documents</a>
+
+</div>
+
+</body>
+</html>
