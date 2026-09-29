@@ -21,18 +21,12 @@ app = Flask(__name__)
 
 
 def clean_text(text):
-    # Basic cleaning: lowercase everything and strip extra whitespace.
-    # TfidfVectorizer already handles tokenization and punctuation for us,
-    # so we keep this part simple.
     text = text.lower()
     text = text.strip()
     return text
 
 
 def extract_text_from_pdf(file):
-    # Read all the pages of a PDF and join their text together.
-    # If a page has no extractable text (for example a scanned image),
-    # extract_text() just returns an empty string for that page, which is fine.
     reader = PdfReader(file)
     full_text = ""
     for page in reader.pages:
@@ -43,8 +37,6 @@ def extract_text_from_pdf(file):
 
 
 def get_text_from_file(file):
-    # Figure out how to read the file based on its extension, since .txt
-    # and .pdf files need to be handled differently.
     filename = file.filename.lower()
 
     if filename.endswith(".txt"):
@@ -52,19 +44,18 @@ def get_text_from_file(file):
         return raw_bytes.decode("utf-8")
 
     elif filename.endswith(".pdf"):
-        # PdfReader needs a file-like object, so we wrap the uploaded
-        # file's bytes in a BytesIO object.
+       
         file_bytes = io.BytesIO(file.read())
         return extract_text_from_pdf(file_bytes)
 
     else:
-        # Let the caller decide what to do if the file type isn't supported.
+       
         return None
 
 
 @app.route("/", methods=["GET"])
 def home():
-    # Just show the upload form.
+    
     return render_template("index.html")
 
 
@@ -72,8 +63,7 @@ def home():
 def compare():
     uploaded_files = request.files.getlist("documents")
 
-    # Filter out empty file slots (the user may not have filled in every
-    # optional "add another document" slot).
+    
     actual_files = []
     for file in uploaded_files:
         if file.filename != "":
@@ -86,8 +76,7 @@ def compare():
     documents = []
     file_names = []
 
-    # Read and clean each uploaded file. If a file can't be read, or is
-    # not a .txt or .pdf file, show an error instead of crashing.
+    
     for file in actual_files:
         filename = file.filename
 
@@ -109,17 +98,14 @@ def compare():
         documents.append(cleaned)
         file_names.append(filename)
 
-    # Convert the documents into TF-IDF vectors.
-    # stop_words="english" removes common filler words like "the" and "and".
+    
     vectorizer = TfidfVectorizer(stop_words="english")
     tfidf_matrix = vectorizer.fit_transform(documents)
 
-    # Compute cosine similarity between every pair of documents at once.
+   
     similarity_matrix = cosine_similarity(tfidf_matrix)
 
-    # Build a list of results, one entry per unique pair of documents.
-    # Starting j at i + 1 avoids comparing a document to itself and avoids
-    # listing the same pair twice.
+   
     results = []
     num_docs = len(file_names)
     for i in range(num_docs):
@@ -133,9 +119,7 @@ def compare():
                 "badge": None
             })
 
-    # If there is more than one pair to compare, tag the highest and lowest
-    # scoring pairs so the results page can call them out. With just one
-    # pair there is nothing to compare it against, so we skip this.
+    
     if len(results) > 1:
         best_match = max(results, key=lambda r: r["percentage"])
         worst_match = min(results, key=lambda r: r["percentage"])
